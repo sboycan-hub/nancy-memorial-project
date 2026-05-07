@@ -1,0 +1,638 @@
+<?php
+/**
+ * Plugin Name: Nancy Memorial — Gallery Bridge
+ * Plugin URI:  https://nancy.boycan.com
+ * Description: Bridges WPForms gallery submissions to 10Web Photo Gallery with one-click moderation. Handles multiple files per submission including video.
+ * Version:     1.0.0
+ * Author:      Steve Boycan
+ */
+
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+define( 'NMB_VERSION', '1.0.0' );
+define( 'NMB_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+
+class Nancy_Memorial_Gallery_Bridge {
+
+    public function __construct() {
+        add_action( 'plugins_loaded',          [ $this, 'init' ] );
+        register_activation_hook( __FILE__,    [ $this, 'activate' ] );
+    }
+
+    public function init() {
+        add_action( 'admin_menu',                    [ $this, 'add_admin_menu' ] );
+        add_action( 'admin_init',                    [ $this, 'register_settings' ] );
+        add_action( 'wpforms_process_complete',      [ $this, 'capture_submission' ], 10, 4 );
+        add_action( 'wp_ajax_nmb_approve',           [ $this, 'approve_submission' ] );
+        add_action( 'wp_ajax_nmb_reject',            [ $this, 'reject_submission' ] );
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTIVATION — create pending submissions table
+    // -----------------------------------------------------------------------
+
+    public function activate() {
+        $this->maybe_create_table();
+    }
+
+    private function maybe_create_table() {
+        global $wpdb;
+        $table           = $wpdb->prefix . 'nmb_pending';
+        $charset_collate = $wpdb->get_charset_collate();
+
+        if ( $wpdb->get_var( "SHOW TABLES LIKE '$table'" ) === $table ) return;
+
+        $sql = "CREATE TABLE $table (
+            id              bigint(20)   NOT NULL AUTO_INCREMENT,
+            entry_id        bigint(20)   NOT NULL,
+            contributor     varchar(200) NOT NULL,
+            relationship    varchar(200) DEFAULT '',
+            caption         text         DEFAULT '',
+            files           longtext     NOT NULL,
+            status          varchar(20)  DEFAULT 'pending',
+            submitted_at    datetime     DEFAULT NULL,
+            processed_at    datetime     DEFAULT NULL,
+            PRIMARY KEY (id),
+            KEY status (status)
+        ) $charset_collate;";
+
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        dbDelta( $sql );
+    }
+
+    // -----------------------------------------------------------------------
+    // ADMIN MENU
+    // -----------------------------------------------------------------------
+
+    public function add_admin_menu() {
+        add_menu_page(
+            'Gallery Submissions',
+            'Gallery Submissions',
+            'manage_options',
+            'nmb-submissions',
+            [ $this, 'render_submissions_page' ],
+            'dashicons-images-alt2',
+            30
+        );
+        add_submenu_page(
+            'nmb-submissions',
+            'Gallery Bridge Settings',
+            'Settings',
+            'manage_options',
+            'nmb-settings',
+            [ $this, 'render_settings_page' ]
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // SETTINGS
+    // -----------------------------------------------------------------------
+
+    public function register_settings() {
+        $fields = [
+            'nmb_form_id',
+            'nmb_gallery_id',
+            'nmb_field_contributor',
+            'nmb_field_relationship',
+            'nmb_field_caption',
+            'nmb_field_files',
+            'nmb_notify_email',
+        ];
+        foreach ( $fields as $f ) {
+            register_setting( 'nmb_settings_group', $f );
+        }
+    }
+
+    public function render_settings_page() {
+        ?>
+        <div class="wrap">
+            <h1>Gallery Bridge — Settings</h1>
+            <p>Connect your WPForms gallery submission form to the 10Web Photo Gallery.</p>
+
+            <form method="post" action="options.php">
+                <?php settings_fields( 'nmb_settings_group' ); ?>
+                <table class="form-table">
+
+                    <tr>
+                        <th scope="row">WPForms Form ID</th>
+                        <td>
+                            <input type="number" name="nmb_form_id"
+                                value="<?php echo esc_attr( get_option( 'nmb_form_id' ) ); ?>"
+                                class="regular-text">
+                            <p class="description">
+                                WPForms → All Forms → hover the gallery form → the ID appears in the URL bar.<br>
+                                Example: <code>?page=wpforms-entries&view=list&form_id=<strong>5</strong></code>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">10Web Gallery ID</th>
+                        <td>
+                            <input type="number" name="nmb_gallery_id"
+                                value="<?php echo esc_attr( get_option( 'nmb_gallery_id' ) ); ?>"
+                                class="regular-text">
+                            <p class="description">
+                                Photo Gallery → Galleries → hover the target gallery → ID is in the URL bar.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">Field ID — Contributor Name</th>
+                        <td>
+                            <input type="number" name="nmb_field_contributor"
+                                value="<?php echo esc_attr( get_option( 'nmb_field_contributor' ) ); ?>"
+                                class="small-text">
+                            <p class="description">
+                                In WPForms editor click the Name field → right panel shows Field ID.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">Field ID — Relationship to Nancy</th>
+                        <td>
+                            <input type="number" name="nmb_field_relationship"
+                                value="<?php echo esc_attr( get_option( 'nmb_field_relationship' ) ); ?>"
+                                class="small-text">
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">Field ID — Caption</th>
+                        <td>
+                            <input type="number" name="nmb_field_caption"
+                                value="<?php echo esc_attr( get_option( 'nmb_field_caption' ) ); ?>"
+                                class="small-text">
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">Field ID — File Upload</th>
+                        <td>
+                            <input type="number" name="nmb_field_files"
+                                value="<?php echo esc_attr( get_option( 'nmb_field_files' ) ); ?>"
+                                class="small-text">
+                            <p class="description">
+                                This must be a WPForms File Upload field with "Allow multiple files" enabled.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">Admin Notification Email</th>
+                        <td>
+                            <input type="email" name="nmb_notify_email"
+                                value="<?php echo esc_attr( get_option( 'nmb_notify_email', get_option( 'admin_email' ) ) ); ?>"
+                                class="regular-text">
+                        </td>
+                    </tr>
+
+                </table>
+                <?php submit_button( 'Save Settings' ); ?>
+            </form>
+        </div>
+        <?php
+    }
+
+    // -----------------------------------------------------------------------
+    // CAPTURE WPFORMS SUBMISSION
+    // -----------------------------------------------------------------------
+
+    public function capture_submission( $fields, $entry, $form_data, $entry_id ) {
+        $configured_form = get_option( 'nmb_form_id' );
+        if ( empty( $configured_form ) || (int) $form_data['id'] !== (int) $configured_form ) return;
+
+        $fid_contributor  = (int) get_option( 'nmb_field_contributor' );
+        $fid_relationship = (int) get_option( 'nmb_field_relationship' );
+        $fid_caption      = (int) get_option( 'nmb_field_caption' );
+        $fid_files        = (int) get_option( 'nmb_field_files' );
+
+        $contributor  = isset( $fields[ $fid_contributor ]['value'] )  ? sanitize_text_field( $fields[ $fid_contributor ]['value'] )  : '';
+        $relationship = isset( $fields[ $fid_relationship ]['value'] ) ? sanitize_text_field( $fields[ $fid_relationship ]['value'] ) : '';
+        $caption      = isset( $fields[ $fid_caption ]['value'] )      ? sanitize_textarea_field( $fields[ $fid_caption ]['value'] )  : '';
+
+        // WPForms file upload — value_raw holds array of file URLs for multi-upload
+        $file_urls = [];
+        if ( isset( $fields[ $fid_files ] ) ) {
+            $fdata = $fields[ $fid_files ];
+            if ( ! empty( $fdata['value_raw'] ) && is_array( $fdata['value_raw'] ) ) {
+                foreach ( $fdata['value_raw'] as $item ) {
+                    // Each item may be a URL string or an array with a 'value' key
+                    $url = is_array( $item ) ? ( $item['value'] ?? '' ) : $item;
+                    if ( ! empty( $url ) ) $file_urls[] = esc_url_raw( $url );
+                }
+            } elseif ( ! empty( $fdata['value'] ) ) {
+                // Single file fallback
+                $file_urls[] = esc_url_raw( $fdata['value'] );
+            }
+        }
+
+        if ( empty( $contributor ) || empty( $file_urls ) ) return;
+
+        $this->maybe_create_table();
+
+        global $wpdb;
+        $wpdb->insert(
+            $wpdb->prefix . 'nmb_pending',
+            [
+                'entry_id'     => $entry_id,
+                'contributor'  => $contributor,
+                'relationship' => $relationship,
+                'caption'      => $caption,
+                'files'        => wp_json_encode( $file_urls ),
+                'status'       => 'pending',
+                'submitted_at' => current_time( 'mysql' ),
+            ],
+            [ '%d', '%s', '%s', '%s', '%s', '%s', '%s' ]
+        );
+
+        $this->send_admin_notification( $contributor, $relationship, count( $file_urls ) );
+    }
+
+    // -----------------------------------------------------------------------
+    // ADMIN SUBMISSIONS PAGE
+    // -----------------------------------------------------------------------
+
+    public function render_submissions_page() {
+        $this->maybe_create_table();
+        global $wpdb;
+        $table = $wpdb->prefix . 'nmb_pending';
+
+        $status  = isset( $_GET['filter_status'] ) ? sanitize_text_field( $_GET['filter_status'] ) : 'pending';
+        $rows    = $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM $table WHERE status = %s ORDER BY submitted_at DESC", $status
+        ) );
+
+        $counts = [];
+        foreach ( [ 'pending', 'approved', 'rejected' ] as $s ) {
+            $counts[ $s ] = (int) $wpdb->get_var( $wpdb->prepare(
+                "SELECT COUNT(*) FROM $table WHERE status = %s", $s
+            ) );
+        }
+
+        wp_enqueue_script( 'jquery' );
+        ?>
+        <div class="wrap">
+            <h1>Gallery Submissions</h1>
+
+            <?php
+            $config_ok = get_option('nmb_form_id') && get_option('nmb_gallery_id') && get_option('nmb_field_files');
+            if ( ! $config_ok ):
+            ?>
+            <div class="notice notice-warning">
+                <p>
+                    <strong>Setup required:</strong>
+                    Please <a href="<?php echo admin_url('admin.php?page=nmb-settings'); ?>">configure the settings</a>
+                    before submissions can be captured.
+                </p>
+            </div>
+            <?php endif; ?>
+
+            <ul class="subsubsub">
+                <?php foreach ( [ 'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected' ] as $s => $label ): ?>
+                <li>
+                    <a href="<?php echo admin_url( 'admin.php?page=nmb-submissions&filter_status=' . $s ); ?>"
+                       <?php if ( $status === $s ) echo 'class="current" style="font-weight:bold"'; ?>>
+                        <?php echo $label; ?>
+                        <span class="count">(<?php echo $counts[ $s ]; ?>)</span>
+                    </a>
+                    <?php if ( $s !== 'rejected' ) echo ' | '; ?>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <br class="clear">
+
+            <?php if ( empty( $rows ) ): ?>
+                <p>No <?php echo esc_html( $status ); ?> submissions.</p>
+            <?php else: ?>
+
+            <table class="wp-list-table widefat fixed striped" style="margin-top:8px;">
+                <thead>
+                    <tr>
+                        <th style="width:160px">Contributor</th>
+                        <th style="width:140px">Relationship</th>
+                        <th>Caption</th>
+                        <th style="width:180px">Files</th>
+                        <th style="width:140px">Submitted</th>
+                        <?php if ( $status === 'pending' ): ?>
+                        <th style="width:150px">Actions</th>
+                        <?php endif; ?>
+                    </tr>
+                </thead>
+                <tbody id="nmb-rows">
+                <?php foreach ( $rows as $row ):
+                    $files = json_decode( $row->files, true ) ?: [];
+                    $video_exts = [ 'mp4', 'mov', 'avi', 'wmv', 'm4v', 'webm' ];
+                ?>
+                <tr id="nmb-row-<?php echo (int) $row->id; ?>">
+                    <td><strong><?php echo esc_html( $row->contributor ); ?></strong></td>
+                    <td><?php echo $row->relationship ? esc_html( $row->relationship ) : '<em style="color:#999">—</em>'; ?></td>
+                    <td><?php echo $row->caption ? esc_html( $row->caption ) : '<em style="color:#999">—</em>'; ?></td>
+                    <td>
+                        <?php foreach ( $files as $i => $url ):
+                            $ext      = strtolower( pathinfo( parse_url( $url, PHP_URL_PATH ), PATHINFO_EXTENSION ) );
+                            $is_video = in_array( $ext, $video_exts, true );
+                        ?>
+                        <a href="<?php echo esc_url( $url ); ?>" target="_blank" title="Open file <?php echo ($i+1); ?>">
+                            <?php if ( $is_video ): ?>
+                                <span style="display:inline-block;background:#1d2327;color:#fff;padding:4px 7px;border-radius:3px;font-size:11px;margin:2px;">▶ Video</span>
+                            <?php else: ?>
+                                <img src="<?php echo esc_url( $url ); ?>"
+                                     style="height:52px;width:52px;object-fit:cover;border-radius:3px;margin:2px;border:1px solid #ddd;"
+                                     onerror="this.style.display='none'">
+                            <?php endif; ?>
+                        </a>
+                        <?php endforeach; ?>
+                        <br><small style="color:#666"><?php echo count( $files ); ?> file(s)</small>
+                    </td>
+                    <td style="font-size:12px;color:#555">
+                        <?php echo esc_html( date( 'M j, Y', strtotime( $row->submitted_at ) ) ); ?><br>
+                        <?php echo esc_html( date( 'g:i a', strtotime( $row->submitted_at ) ) ); ?>
+                    </td>
+                    <?php if ( $status === 'pending' ): ?>
+                    <td>
+                        <button class="button button-primary nmb-btn-approve"
+                                data-id="<?php echo (int) $row->id; ?>"
+                                style="margin-bottom:4px;display:block;width:100%">
+                            ✓ Approve all
+                        </button>
+                        <button class="button nmb-btn-reject"
+                                data-id="<?php echo (int) $row->id; ?>"
+                                style="display:block;width:100%">
+                            ✗ Reject
+                        </button>
+                    </td>
+                    <?php endif; ?>
+                </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+
+            <?php endif; ?>
+        </div>
+
+        <div id="nmb-notice" style="display:none;position:fixed;top:40px;right:20px;z-index:9999;
+             background:#fff;border-left:4px solid #00a32a;padding:12px 20px;box-shadow:0 2px 8px rgba(0,0,0,.2);
+             border-radius:3px;max-width:320px;font-size:13px;">
+        </div>
+
+        <script>
+        jQuery(document).ready(function($) {
+            var nonce = '<?php echo wp_create_nonce( 'nmb_nonce' ); ?>';
+
+            function showNotice(msg, isError) {
+                var $n = $('#nmb-notice');
+                $n.css('border-color', isError ? '#d63638' : '#00a32a').text(msg).fadeIn(200);
+                setTimeout(function(){ $n.fadeOut(400); }, 3500);
+            }
+
+            $(document).on('click', '.nmb-btn-approve', function() {
+                var $btn = $(this);
+                var id   = $btn.data('id');
+                $btn.prop('disabled', true).text('Adding to gallery…');
+
+                $.post(ajaxurl, { action: 'nmb_approve', id: id, nonce: nonce }, function(r) {
+                    if (r.success) {
+                        showNotice('✓ ' + r.data, false);
+                        $('#nmb-row-' + id).fadeOut(300, function(){ $(this).remove(); });
+                    } else {
+                        showNotice('✗ ' + r.data, true);
+                        $btn.prop('disabled', false).text('✓ Approve all');
+                    }
+                }).fail(function() {
+                    showNotice('Request failed. Try again.', true);
+                    $btn.prop('disabled', false).text('✓ Approve all');
+                });
+            });
+
+            $(document).on('click', '.nmb-btn-reject', function() {
+                if (!confirm('Reject this submission? It will be moved to the Rejected tab.')) return;
+                var $btn = $(this);
+                var id   = $btn.data('id');
+                $btn.prop('disabled', true).text('Rejecting…');
+
+                $.post(ajaxurl, { action: 'nmb_reject', id: id, nonce: nonce }, function(r) {
+                    if (r.success) {
+                        showNotice('Submission rejected.', false);
+                        $('#nmb-row-' + id).fadeOut(300, function(){ $(this).remove(); });
+                    } else {
+                        showNotice('✗ ' + r.data, true);
+                        $btn.prop('disabled', false).text('✗ Reject');
+                    }
+                });
+            });
+        });
+        </script>
+        <?php
+    }
+
+    // -----------------------------------------------------------------------
+    // APPROVE — move files to 10Web gallery
+    // -----------------------------------------------------------------------
+
+    public function approve_submission() {
+        check_ajax_referer( 'nmb_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized.' );
+
+        $id = intval( $_POST['id'] ?? 0 );
+        global $wpdb;
+        $table = $wpdb->prefix . 'nmb_pending';
+
+        $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ) );
+        if ( ! $row ) wp_send_json_error( 'Submission not found.' );
+
+        $gallery_id = (int) get_option( 'nmb_gallery_id' );
+        if ( ! $gallery_id ) wp_send_json_error( 'Gallery ID not set. Go to Gallery Submissions → Settings.' );
+
+        $files = json_decode( $row->files, true ) ?: [];
+        if ( empty( $files ) ) wp_send_json_error( 'No files found in this submission.' );
+
+        $added  = 0;
+        $errors = [];
+
+        foreach ( $files as $url ) {
+            $result = $this->add_file_to_gallery( $url, $row, $gallery_id );
+            if ( $result === true ) {
+                $added++;
+            } else {
+                $errors[] = $result;
+            }
+        }
+
+        if ( $added > 0 ) {
+            $wpdb->update(
+                $table,
+                [ 'status' => 'approved', 'processed_at' => current_time( 'mysql' ) ],
+                [ 'id' => $id ],
+                [ '%s', '%s' ],
+                [ '%d' ]
+            );
+            $msg = "$added file(s) added to gallery.";
+            if ( ! empty( $errors ) ) $msg .= ' ' . count( $errors ) . ' file(s) failed.';
+            wp_send_json_success( $msg );
+        } else {
+            wp_send_json_error( 'All files failed to process. Errors: ' . implode( ' | ', $errors ) );
+        }
+    }
+
+    private function add_file_to_gallery( $file_url, $row, $gallery_id ) {
+        global $wpdb;
+
+        $upload_dir = wp_upload_dir();
+        $base_url   = $upload_dir['baseurl'];
+        $base_dir   = $upload_dir['basedir'];
+
+        // Resolve URL to local path
+        $file_path = str_replace( $base_url, $base_dir, $file_url );
+        $file_path = wp_normalize_path( $file_path );
+
+        if ( ! file_exists( $file_path ) ) {
+            return 'File not found on server: ' . basename( $file_path );
+        }
+
+        // Determine type
+        $ext        = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+        $img_exts   = [ 'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp' ];
+        $vid_exts   = [ 'mp4', 'mov', 'avi', 'wmv', 'm4v', 'webm' ];
+        $filetype   = '';
+
+        if ( in_array( $ext, $img_exts, true ) ) {
+            $filetype = 'image';
+        } elseif ( in_array( $ext, $vid_exts, true ) ) {
+            $filetype = 'video';
+        } else {
+            return 'Unsupported file type: ' . $ext;
+        }
+
+        // 10Web gallery upload directory
+        $gallery_dir = $base_dir . '/photo-gallery/';
+        if ( ! wp_mkdir_p( $gallery_dir ) ) {
+            return 'Cannot create gallery directory.';
+        }
+
+        // Unique filename to prevent collisions
+        $new_filename = wp_unique_filename( $gallery_dir, 'nmb_' . time() . '_' . sanitize_file_name( basename( $file_path ) ) );
+        $dest_path    = $gallery_dir . $new_filename;
+
+        if ( ! copy( $file_path, $dest_path ) ) {
+            return 'Failed to copy file: ' . basename( $file_path );
+        }
+
+        // Generate thumbnail for images
+        $thumb_size = 0;
+        if ( $filetype === 'image' ) {
+            $thumb_size = $this->make_thumbnail( $dest_path, $gallery_dir, $new_filename );
+        }
+
+        // Image resolution
+        $resolution = '';
+        if ( $filetype === 'image' ) {
+            $size_data = getimagesize( $dest_path );
+            if ( $size_data ) $resolution = $size_data[0] . 'x' . $size_data[1];
+        }
+
+        // Description includes contributor attribution
+        $description = 'Contributed by: ' . $row->contributor;
+        if ( ! empty( $row->relationship ) ) $description .= ' (' . $row->relationship . ')';
+        if ( ! empty( $row->caption ) )      $description .= "\n" . $row->caption;
+
+        // Next sort order in this gallery
+        $max_order = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COALESCE(MAX(`order`), -1) FROM {$wpdb->prefix}bwg_image WHERE gallery_id = %d",
+            $gallery_id
+        ) );
+        $next_order = $max_order + 1;
+
+        $inserted = $wpdb->insert(
+            $wpdb->prefix . 'bwg_image',
+            [
+                'gallery_id'         => $gallery_id,
+                'filename'           => $new_filename,
+                'filetype'           => $filetype,
+                'alt'                => $row->contributor,
+                'title'              => $row->caption ?: $row->contributor,
+                'description'        => $description,
+                'date'               => $row->submitted_at,
+                'tags'               => '',
+                'size'               => (int) filesize( $dest_path ),
+                'thumb_size'         => $thumb_size,
+                'resolution'         => $resolution,
+                'redirect_url'       => '',
+                'order'              => $next_order,
+                'pricelist_id'       => 0,
+                'author'             => 0,
+                'comment_count'      => 0,
+                'rate'               => 0,
+                'show_watermark'     => 0,
+                'watermark_position' => 'top-left',
+                'hit'                => 0,
+            ],
+            [ '%d','%s','%s','%s','%s','%s','%s','%s','%d','%d','%s','%s','%d','%d','%d','%d','%d','%d','%s','%d' ]
+        );
+
+        if ( $inserted === false ) {
+            // Clean up copied file on DB failure
+            @unlink( $dest_path );
+            return 'Database insert failed for: ' . $new_filename;
+        }
+
+        return true;
+    }
+
+    private function make_thumbnail( $source_path, $gallery_dir, $filename ) {
+        $editor = wp_get_image_editor( $source_path );
+        if ( is_wp_error( $editor ) ) return 0;
+
+        $editor->resize( 300, 300, true );
+        $thumb_path = $gallery_dir . 'thumb_' . $filename;
+        $saved = $editor->save( $thumb_path );
+
+        if ( is_wp_error( $saved ) || ! isset( $saved['path'] ) ) return 0;
+        return (int) filesize( $saved['path'] );
+    }
+
+    // -----------------------------------------------------------------------
+    // REJECT
+    // -----------------------------------------------------------------------
+
+    public function reject_submission() {
+        check_ajax_referer( 'nmb_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized.' );
+
+        $id = intval( $_POST['id'] ?? 0 );
+        global $wpdb;
+
+        $wpdb->update(
+            $wpdb->prefix . 'nmb_pending',
+            [ 'status' => 'rejected', 'processed_at' => current_time( 'mysql' ) ],
+            [ 'id' => $id ],
+            [ '%s', '%s' ],
+            [ '%d' ]
+        );
+
+        wp_send_json_success( 'Submission rejected.' );
+    }
+
+    // -----------------------------------------------------------------------
+    // EMAIL NOTIFICATION
+    // -----------------------------------------------------------------------
+
+    private function send_admin_notification( $contributor, $relationship, $file_count ) {
+        $to      = get_option( 'nmb_notify_email', get_option( 'admin_email' ) );
+        $subject = 'New gallery submission — Nancy Boycan Memorial';
+
+        $body  = "A new gallery submission has arrived and is waiting for your review.\n\n";
+        $body .= "Contributor: $contributor";
+        if ( ! empty( $relationship ) ) $body .= " ($relationship)";
+        $body .= "\nFiles submitted: $file_count\n\n";
+        $body .= "Review and approve here:\n";
+        $body .= admin_url( 'admin.php?page=nmb-submissions' ) . "\n\n";
+        $body .= "— Nancy Memorial Site";
+
+        wp_mail( $to, $subject, $body );
+    }
+}
+
+new Nancy_Memorial_Gallery_Bridge();
