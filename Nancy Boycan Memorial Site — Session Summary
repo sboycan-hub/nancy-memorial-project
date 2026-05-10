@@ -1,0 +1,393 @@
+Nancy Boycan Memorial Site — Session Summary
+Version 1.0 — May 2026
+Context document for new Claude sessions and Chrome extension sessions
+
+1. Project Overview
+Building a WordPress memorial website for Nancy Eileen Boycan (October 26, 1942 – May 2, 2025).
+
+Field
+Detail
+Live site
+https://nancy.boycan.com
+Staging site
+https://nancy.boycan.com/nancy-site-stagi/ (password protected)
+Hosting
+InMotion Hosting, cPanel, unlimited plan
+Platform
+WordPress 6.9.4
+Theme
+Crio by BoldGrid
+Page builder
+Post and Page Builder by BoldGrid
+Admin
+Steve Boycan (sole administrator)
+GitHub repo
+https://github.com/sboycan-hub/nancy-memorial-project (public)
+GitHub account
+sboycan-hub
+
+
+
+2. Steve Boycan — Context
+Based in Scotch Plains, NJ
+Runs Canateo LLC (NJ consulting partnership)
+Sons: Steven (informant on death certificate) and David Scott Boycan
+Preferences: crisp answers, no flattery, present alternatives when close, ask clarifying questions
+Philosophy on tools: prefers building automation over buying plugins when Claude can help write the code; paid tools always presented as an option alongside DIY
+
+
+3. About Nancy Eileen Boycan
+Vital statistics:
+
+Born: October 26, 1942, Butler, PA
+Raised: West Sunbury, PA (rural)
+Died: May 2, 2025, Virginia Hospital Center, Arlington, VA — age 82
+Lived in Reston, VA (1409 Greenmont Court) from 1973
+Cause of death: MRSA endocarditis contracted while hospitalized for blood sugar/insulin episode, while undergoing treatment for Stage 4 neuroendocrine carcinoma
+Disposition: Cremation, Carewell Cremations, Fairfax VA
+
+Parents: Kenneth Irwin Weisenstein and Ina Catherine Weisenstein (both deceased)
+
+Siblings:
+
+Ronald Weisenstein (sons: Ron and Eric Weisenstein)
+Kenneth Weisenstein (wife: Gretchen; daughters: Kathy Weisenstein Cummings, Barbara [last name TBD], Sharon Eisnor [confirm spelling])
+
+Former husband: Gary Boycan (married 1965, divorced 1976, remained lifelong friends; visited Nancy on her deathbed)
+
+Sons:
+
+Steven Thomas Boycan, Scotch Plains NJ — daughter: Eloise Krystyna Boycan
+David Scott Boycan, Arlington VA — wife: Murrin McClafferty; children: Brendan, Connor, Alison, Nathan
+
+Education:
+
+Grove City College [major TBD]
+Virginia Polytechnic Institute (Virginia Tech) — MS [field TBD] via graduate fellowship
+
+Career: Systems engineer and program manager, defense industry
+
+Employers: Sperry → E-Systems → Space Station Program Office → MITRE Corporation → co-owner boutique defense contracting firm, Northern Virginia
+Specialties: SIGINT, Electronic Warfare, naval defense programs, early UAV/unmanned systems
+Notable: Believed to be one of the first (if not the first) woman to go to sea on an operational U.S. Navy vessel for acceptance testing of a classified program
+Health interruption: Diagnosed with Chronic Fatigue Syndrome and Diabetes mid-career, sidelined for several years, returned to work
+Also operated a Floor Covering International franchise in Florida
+
+Personal:
+
+Shy by nature but wanted people around her; deep lifelong friendships over many acquaintances
+Loved animals (birds especially, also snakes/lizards/insects — would not harm them)
+Dogs: "Fluffy/Killer" (stray), Fritz (colleague's schnauzer), Dexter (David's lab), Brindle (Bruce's dog)
+Longtime companion: Bruce (Lusby, MD); enjoyed fishing Patuxent River/Chesapeake Bay, crabs, firepits
+Loved the beach, waves at night; took boys to Bahamas/Acapulco/Hawaii; Bahamas timeshare 1980s–early 90s; danced Junkanoo
+Music: Neil Diamond, Gordon Lightfoot, Beatles, Simon & Garfunkel, Linda Ronstadt, Elvis, Elton John, Santana, ELO, Beach Boys, Cyndi Lauper, Queen, Barbara Streisand, ABBA, Taylor Swift — danced in the aisle at Mamma Mia on Broadway
+Cooking: hospitality rule (always feed guests no matter the hour), holiday meal traditions (raisin stuffing Thanksgiving, ham/turkey Christmas, corned beef St. Patrick's, ham & scalloped potatoes Easter), same-day corn on the cob, chile parties
+Generous: took in renters in need, gave to people on the street
+Faith: spiritually Protestant Christian, unaffiliated; Presbyterian upbringing, Lutheran extended family; crosses/religious images in home
+Final wishes: be celebrated not mourned; memorial party; ashes in a trout stream
+
+Health timeline (final illness):
+
+2024: Diagnosed Stage 4 neuroendocrine carcinoma (aggressive)
+Chemotherapy Round 1: Strong response
+Clinical immunotherapy trial: Partial remission
+Adverse reaction to immunotherapy: Had to stop
+Preparing for Chemo Round 2 when collapsed from blood sugar/insulin episode
+Hospitalized → contracted MRSA → MRSA infected heart valve (endocarditis)
+Doctors recommended hospice — Nancy refused
+Treatments for infection incompatible with chemotherapy; cascade of systemic failures
+Passed May 2, 2025, with son Steven at her side
+
+
+4. Obituary Status
+Current version: Draft 8 — Nancy_Obituary.md in GitHub repo
+
+Sections:
+
+Early Life
+Family
+A Career That Broke Ground
+The Good Times (renamed from "Life in Reston" — includes Reston, Lusby/Bruce, beach/travel, music/ABBA, cooking/holiday meals, chile parties/friendships)
+The Animals
+Her Generosity
+Faith
+Her Final Fight
+Her Wishes
+Survivors
+A Note to Those Who Knew Her
+
+Placeholders remaining:
+
+Grove City College major
+Virginia Tech field of study
+Barbara Weisenstein last name
+Sharon Eisnor — confirm spelling
+
+CRITICAL NOTE: The live site (nancy.boycan.com) currently has an abbreviated version of the obituary that the Chrome extension generated independently. It is NOT Draft 8. Multiple sections are missing or wrong. See Section 9 of this document for the full list of corrections needed.
+
+
+5. Site Structure
+Page
+URL
+Status
+Home
+nancy.boycan.com
+Live — content needs correction (see Section 9)
+Tributes
+nancy.boycan.com/?page_id=13
+Live — content unknown
+Memories
+nancy.boycan.com/?page_id=16
+Live — content unknown
+Gallery
+nancy.boycan.com/?page_id=32
+Live — content unknown
+Events
+nancy.boycan.com/?page_id=29
+Live — placeholder needed
+Links
+nancy.boycan.com/?page_id=23
+Live — content needed
+
+
+Note: Pages using ?page_id= URLs. Enable pretty permalinks: Settings → Reading → Post name.
+
+
+6. Plugins Installed
+Plugin
+Purpose
+Status
+Post and Page Builder by BoldGrid
+Page layout
+Active
+Crio theme
+Base theme
+Active
+MetaSlider
+Home page slideshow
+Active
+MailPoet
+Email subscriptions
+Active
+Total Upkeep
+Backups
+Active
+WP Super Cache
+Page caching
+Active — caching ON, tested
+WPForms Lite
+Submission forms
+To install
+10Web Photo Gallery
+Gallery display
+To install — purchase premium ($30 one-time) for native video
+Nancy Memorial Gallery Bridge
+Custom bridge plugin
+Built — ready to install (see Section 8)
+
+
+Server settings:
+
+PHP upload_max_filesize: 2GB
+PHP post_max_size: 1GB
+WordPress memory: 512MB
+Storage: Unlimited plan, 34GB used
+Auto-updates: Enabled on all plugins
+Search engine indexing: Currently DISABLED (noindex) — turn on when ready to go live
+
+
+7. GitHub Repository
+Repo: https://github.com/sboycan-hub/nancy-memorial-project (public) Account: sboycan-hub Gist ID: 4671f62fb8a6ba671f35728f8542be2a (superseded by repo)
+
+Files in repo: | File | Description | |------|-------------| | Nancy_Obituary.md | Full obituary Draft 8 — USE THIS for all content | | Gary_Boycan_Tribute.md | Gary Boycan's written tribute — pre-load as first Tributes entry | | NancySite_BuildPlan.md | Step-by-step build checklist | | NancySite_DesignSpec.md | Full design specification v3.0 |
+
+Access from Claude chat: Use blob URLs: https://github.com/sboycan-hub/nancy-memorial-project/blob/main/[filename]
+
+Access from Chrome extension: Use raw URLs: https://raw.githubusercontent.com/sboycan-hub/nancy-memorial-project/main/[filename]
+
+Updating files: Use GitHub web editor — open file → pencil icon → paste updated content → commit.
+
+
+8. Custom Bridge Plugin
+File: nancy-memorial-gallery-bridge.zip (ready to install)
+
+Purpose: Bridges WPForms gallery form submissions to 10Web Photo Gallery with one-click moderation. Eliminates manual transfer of submitted photos/videos to the gallery.
+
+What it does:
+
+Captures WPForms submissions automatically
+Stores as pending in custom database table (wp_nmb_pending)
+Emails admin on each new submission
+Shows Gallery Submissions menu in WordPress dashboard
+Thumbnail previews of submitted photos; video labels for video files
+One-click Approve: copies files to 10Web directory, generates thumbnails, inserts db records with contributor attribution
+One-click Reject: moves to rejected tab
+Handles multiple files per submission
+Handles images and video
+
+Setup after install:
+
+Gallery Submissions → Settings
+Enter: WPForms Form ID, 10Web Gallery ID, four field IDs (contributor name, relationship, caption, file upload)
+Enable "Allow multiple files" on the WPForms file upload field
+
+
+9. Live Site Issues — Corrections Needed
+The Chrome extension independently rewrote the obituary content instead of using Draft 8. The following corrections are needed on the Home page. All replacement text must be copied VERBATIM from Nancy_Obituary.md in GitHub — do NOT rewrite or paraphrase.
+
+Section
+Issue
+Early Life
+Virginia Tech fellowship and MS degree missing; needs full Draft 8 text
+A Career That Broke Ground
+Generic version — missing Sperry/E-Systems/MITRE/Space Station, SIGINT, Electronic Warfare, naval vessel story, CFS diagnosis, Floor Covering franchise. Replace entirely.
+The Good Times
+Missing entire food/cooking section (holiday meals, raisin stuffing, corn on cob, chile parties, shy but wanted people around her). Replace entirely.
+The Animals
+Entire section missing — add from Draft 8
+Her Generosity
+Entire section missing — add from Draft 8
+Her Final Fight
+Significantly abbreviated — missing immunotherapy trial, partial remission, MRSA detail, hospice refusal, fighter theme. Replace entirely.
+Her Wishes
+Entire section missing — add (trout stream, party request)
+Survivors
+"Steven Scott Boycan" → should be "Steven Thomas Boycan"; remove [location] placeholder
+
+
+Additional fixes:
+
+Enable pretty permalinks: Settings → Permalinks → Post name
+Enable search engine indexing when ready: Settings → Reading → uncheck "Discourage search engines"
+
+
+10. Gallery & Submission Workflow
+Slideshow (MetaSlider): Admin-curated. Steve manually adds photos via MetaSlider → edit slider → Add Slide → select from Media Library.
+
+Gallery page (10Web Photo Gallery):
+
+Visitor submits via WPForms form (name, relationship, photo/video upload, caption)
+WPForms stores submission
+Bridge plugin captures it, emails Steve
+Steve approves in Gallery Submissions dashboard → files auto-added to 10Web gallery with attribution
+Supports multiple files per submission, images and native video (premium 10Web required)
+
+Video policy: Native video upload supported (up to 2GB). YouTube/Vimeo link submission also acceptable as fallback.
+
+Threaded comments: Enable WordPress native threaded comments on Memories and Gallery pages (Settings → Discussion → Enable threaded comments). NOT on Tributes page.
+
+
+11. Email & Subscriptions (MailPoet)
+Subscriber list maintained in WordPress: MailPoet → Subscribers
+Visitor subscribes → double opt-in email → added to list
+Subscriber notifications: new tribute approved, new event posted
+Admin notifications: new submission received (via WPForms form notifications + bridge plugin)
+Subscription form: on Home page and in footer sitewide
+
+
+12. Design Decisions
+Element
+Decision
+Heading font
+Playfair Display (Google Fonts)
+Body font
+Lora or Merriweather (Google Fonts) — final TBD
+Text alignment
+Left-aligned — NOT justified
+Color palette
+Soft creams, warm grays, gentle blues/greens
+Tone
+Warm, personal, dignified
+Sidebar
+Minimal or none
+Mobile
+Essential
+Subscribe
+Home page + footer sitewide
+
+
+
+13. Content Still Needed
+Item
+Status
+Grove City College major
+TBD — ask family
+Virginia Tech field of study
+TBD — ask family
+Barbara Weisenstein last name
+TBD — verify
+Sharon Eisnor spelling
+TBD — verify
+Photos for slideshow and gallery
+Being gathered
+Memorial event details
+Date/time/location TBD
+GoFundMe URL
+Not yet created
+NETRF Everlasting Impact Tribute
+Contact: laken.baird@netrf.org or 617-946-1780
+
+
+
+14. Links Page — Charities
+Charity
+URL
+Memorial giving
+Connection to Nancy
+NETRF
+netrf.org
+Yes — Everlasting Impact Tribute (contact Laken Baird)
+Her cancer diagnosis
+Sepsis Alliance
+sepsis.org
+Yes — in-memory donation
+MRSA/sepsis
+Trout Unlimited
+tu.org/get-involved/donate/ways-to-give/memorial-honorary-donations
+Yes
+Ashes in trout stream
+National Wildlife Federation
+nwf.org
+Yes
+Wildlife; NWF HQ is in Reston VA — same city Nancy lived in 50 years
+
+
+
+15. GoFundMe
+Appeal text is written and ready. Purpose: cover Nancy's final expenses (spent savings on cancer treatment). Excess to charity. Signed: Steve Boycan. No dollar goal.
+
+
+16. WP Staging Issue — Current State
+At end of session the Chrome extension was performing a reclone of production back to staging and got hung. Extension froze with error: messages.19.content.27.image.source.base64.data: At least one of the image dimensions exceed max allowed size for many-image requests: 2000 pixels
+
+Recovery: Close hung extension session. Check WP Staging in WordPress dashboard to see if clone completed or errored. Start fresh extension session if needed.
+
+Prevention: Tell extension at session start: "Do not take screenshots. Describe what you see in text only."
+
+
+17. Workflow Notes
+Preferred workflow:
+
+Design decisions → Claude chat (this session)
+Implementation → Chrome extension (focused single-task sessions)
+Review → Claude chat fetches live site, compares against spec
+Reconcile → update GitHub docs via web editor
+
+Chrome extension tips:
+
+Start each session with a focused task, not the whole build plan
+Paste only the relevant section of the spec, not all four docs
+Say "Do not take screenshots" to avoid image size errors and save tokens
+Say "Copy text verbatim from the source document — do not rewrite"
+Claude in Chrome uses Haiku model — fast but less capable; come back to main chat for complex decisions
+
+Token management:
+
+Steve's weekly limit resets Monday 9am
+Long single sessions are expensive — shorter focused sessions are cheaper
+Moving to a Claude Project recommended for future sessions
+
+
+
+Session summary v1.0 — Nancy Boycan Memorial Site — May 2026
+
